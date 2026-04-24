@@ -9,7 +9,7 @@ from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassifica
 from data_cleaner import preprocess_dataframe
 
 # Must be the very first Streamlit command
-st.set_page_config(page_title="Enterprise Sentiment Intelligence", page_icon="📈", layout="wide")
+st.set_page_config(page_title="Sentiment Analysis Dashboard", layout="wide")
 
 # Advanced CSS Injection for a Premium Look
 st.markdown("""
@@ -70,17 +70,16 @@ def load_sentiment_pipeline():
 classifier = load_sentiment_pipeline()
 
 # --- HERO SECTION ---
-st.title("📈 Enterprise Sentiment Intelligence Platform")
-st.markdown("<p style='font-size: 1.2rem; color: #7f8c8d;'>A centralized machine learning hub for deep-text sentiment analytics, behavioral extraction, and executive reporting.</p>", unsafe_allow_html=True)
+st.title("Sentiment Analysis Dashboard")
+st.markdown("<p style='font-size: 1.2rem; color: #7f8c8d;'>Clean review data, fine-tune models, and visualize predictive insights.</p>", unsafe_allow_html=True)
 st.markdown("---")
 
-# --- SIDEBAR CONFIGURATION ---
-with st.sidebar:
-    st.image("https://cdn-icons-png.flaticon.com/512/2103/2103285.png", width=60) # Placeholder generic AI icon
-    st.title("Data Ingestion Engine")
-    st.markdown("Select your input vector to begin batch processing.")
+# --- INGESTION SECTION ---
+with st.container():
+    st.markdown("### Data Upload & Selection")
+    st.markdown("Select your data source to begin batch processing.")
     
-    data_source = st.radio("Primary Data Source:", ["Local Database", "Upload External Files"])
+    data_source = st.radio("Primary Data Source:", ["Local Database", "Upload External Files"], horizontal=True)
     
     uploaded_files = []
     local_file_path = None
@@ -93,21 +92,22 @@ with st.sidebar:
         if os.path.exists(data_dir):
             local_files = [f for f in os.listdir(data_dir) if f.endswith(('.csv', '.xlsx', '.json'))]
             if local_files:
-                selected_file = st.selectbox("Select local index:", local_files)
+                selected_file = st.selectbox("Select local Dataset:", local_files)
                 local_file_path = os.path.join(data_dir, selected_file)
             else:
-                st.warning("No indices found in the 'data' partition.")
+                st.warning("No files found in the 'data' folder.")
         else:
-            st.error("System error: 'data' partition unlinked.")
+            st.error("System error: 'data' folder not found.")
             
     files_to_process = uploaded_files if data_source == "Upload External Files" else [local_file_path] if local_file_path else []
     
     st.markdown("<br>", unsafe_allow_html=True)
-    execute_btn = st.button("🚀 Initialize Pipeline")
+    execute_btn = st.button("Execute Pipeline")
+    st.markdown("---")
 
 # --- MAIN EXECUTION BLOCK ---
 if files_to_process and execute_btn:
-    with st.spinner("Neural Engine Active: Parsing and Inferencing..."):
+    with st.spinner("Executing batch inference..."):
         all_dfs = []
         prog = st.progress(0)
         
@@ -134,12 +134,12 @@ if files_to_process and execute_btn:
             if texts:
                 results = []
                 batch_size = 64
-                inner_prog = st.progress(0, text=f"Vectorizing {file_name}...")
+                inner_prog = st.progress(0, text=f"Analyzing {file_name}...")
                 
                 for j in range(0, len(texts), batch_size):
                     batch_results = classifier(texts[j:j+batch_size])
                     results.extend(batch_results)
-                    inner_prog.progress(min(1.0, (j+batch_size)/len(texts)), text=f"Vectorizing {file_name}...")
+                    inner_prog.progress(min(1.0, (j+batch_size)/len(texts)), text=f"Analyzing {file_name}...")
                 inner_prog.empty()
                 
                 df_clean['Sentiment'] = ['Positive' if r['label'] in ['POSITIVE', 'LABEL_1'] else 'Negative' for r in results]
@@ -155,22 +155,22 @@ if files_to_process and execute_btn:
             global_df = pd.concat(all_dfs, ignore_index=True)
             
             # --- 1. EXECUTIVE SUMMARY ---
-            st.subheader("📊 Executive Summary")
+            st.subheader("Executive Summary")
             total = len(global_df)
             pos = len(global_df[global_df['Sentiment'] == 'Positive'])
             neg = total - pos
             avg_conf = global_df['Confidence'].mean()
             
             col1, col2, col3, col4 = st.columns(4)
-            col1.metric("Total Datapoints Processed", f"{total:,}")
-            col2.metric("Overall Positive Sentiment", f"{pos:,}", f"{(pos/total)*100:.1f}%")
-            col3.metric("Overall Negative Sentiment", f"{neg:,}", f"-{(neg/total)*100:.1f}%")
-            col4.metric("AI Confidence Average", f"{avg_conf*100:.1f}%")
+            col1.metric("Total Documents", f"{total:,}")
+            col2.metric("Positive Reviews", f"{pos:,}", f"{(pos/total)*100:.1f}%")
+            col3.metric("Negative Reviews", f"{neg:,}", f"-{(neg/total)*100:.1f}%")
+            col4.metric("Average Confidence", f"{avg_conf*100:.1f}%")
             
             st.markdown("<br>", unsafe_allow_html=True)
             
             # --- 2. ADVANCED INTERACTIVE ANALYTICS ---
-            st.subheader("📈 Core Analytics Engine")
+            st.subheader("Interactive Analytics")
             col_donut, col_box = st.columns(2)
             
             with col_donut:
@@ -183,33 +183,33 @@ if files_to_process and execute_btn:
             with col_box:
                 fig_box = px.box(global_df, x="Dataset_Name", y="Confidence", color="Sentiment",
                                  color_discrete_map={'Positive':'#2ecc71', 'Negative':'#e74c3c'})
-                fig_box.update_layout(title_text="Confidence Spread by Sub-Index", title_x=0.5, margin=dict(t=50, b=20, l=0, r=0), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+                fig_box.update_layout(title_text="Confidence Spread by Dataset", title_x=0.5, margin=dict(t=50, b=20, l=0, r=0), paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
                 st.plotly_chart(fig_box, use_container_width=True)
 
             # --- 3. BEHAVIORAL ANALYTICS ---
             st.markdown("---")
-            st.subheader("🧠 Behavioral & Structural Analytics")
+            st.subheader("Behavioral & Text Length Analytics")
             fig_hist = px.histogram(global_df, x="Text_Length", color="Sentiment", marginal="violin",
                                     color_discrete_map={'Positive':'#2ecc71', 'Negative':'#e74c3c'}, opacity=0.8)
-            fig_hist.update_layout(title_text="Text Length Density & User Verbosity Profiling", title_x=0.5, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
+            fig_hist.update_layout(title_text="Text Length Density by Sentiment", title_x=0.5, paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)')
             st.plotly_chart(fig_hist, use_container_width=True)
 
             # --- 4. EXTREMES ANALYSIS ---
             st.markdown("---")
-            st.subheader("🚨 Extreme Polarized Extractions")
-            st.markdown("The neural network's absolute highest-confidence extractions across the global dataset.")
+            st.subheader("Top Impactful Reviews")
+            st.markdown("The highest confidence positive and negative predictions.")
             top_pos = global_df[global_df['Sentiment']=='Positive'].nlargest(3, 'Confidence')
             top_neg = global_df[global_df['Sentiment']=='Negative'].nlargest(3, 'Confidence')
             
             c_pos, c_neg = st.columns(2)
             with c_pos:
-                st.success("**🏆 Top Positive Extractions**")
+                st.success("**Top Positive Reviews**")
                 for _, row in top_pos.iterrows():
                     st.write(f"**Confidence: {row['Confidence']*100:.1f}%**")
                     st.caption(f"_{row['cleaned_text']}_")
                     st.markdown("---")
             with c_neg:
-                st.error("**⚠️ Top Negative Extractions**")
+                st.error("**Top Negative Reviews**")
                 for _, row in top_neg.iterrows():
                     st.write(f"**Confidence: {row['Confidence']*100:.1f}%**")
                     st.caption(f"_{row['cleaned_text']}_")
@@ -217,7 +217,7 @@ if files_to_process and execute_btn:
 
             # --- 5. LEXICAL THEME EXTRACTION ---
             st.markdown("---")
-            st.subheader("☁️ Lexical Theme Generation")
+            st.subheader("Lexical Theme Extraction")
             pos_text = " ".join(global_df[global_df['Sentiment'] == 'Positive']['cleaned_text'])
             neg_text = " ".join(global_df[global_df['Sentiment'] == 'Negative']['cleaned_text'])
             
@@ -245,15 +245,15 @@ if files_to_process and execute_btn:
 
             # --- 6. DATABASE EXPLORER ---
             st.markdown("---")
-            with st.expander("🗄️ Open Global Database Explorer & Export Module"):
-                filter_sent = st.selectbox("Filter Database by Neural Classification", ["All", "Positive", "Negative"])
+            with st.expander("Database Explorer & Export"):
+                filter_sent = st.selectbox("Filter by Sentiment", ["All", "Positive", "Negative"])
                 display_df = global_df if filter_sent == "All" else global_df[global_df['Sentiment'] == filter_sent]
                 
                 st.dataframe(display_df[['Dataset_Name', 'cleaned_text', 'Sentiment', 'Confidence', 'Text_Length']].head(100), use_container_width=True)
                 
                 csv = global_df.to_csv(index=False).encode('utf-8')
-                st.download_button("📥 Download Master Report (CSV)", data=csv, file_name='enterprise_sentiment_report.csv', mime='text/csv')
+                st.download_button("Download Report (CSV)", data=csv, file_name='sentiment_report.csv', mime='text/csv')
         else:
             st.warning("No valid text data could be parsed from the selected sources.")
 elif not files_to_process:
-    st.info("👈 Please select a data source from the control panel on the left to begin.")
+    st.info("Please select a data source to begin.")
