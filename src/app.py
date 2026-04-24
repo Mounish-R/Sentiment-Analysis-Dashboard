@@ -32,8 +32,8 @@ def load_sentiment_pipeline():
         model = AutoModelForSequenceClassification.from_pretrained(model_dir)
         return pipeline("sentiment-analysis", model=model, tokenizer=tokenizer, batch_size=64)
     else:
-        st.error("Locally fine-tuned model not found. Please run src/model_trainer.py to train the base model first.")
-        st.stop()
+        # Cloud Deployment Fallback: GitHub blocks the 250MB local model, so Streamlit must download a base model.
+        return pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english", batch_size=64)
 
 classifier = load_sentiment_pipeline()
 
