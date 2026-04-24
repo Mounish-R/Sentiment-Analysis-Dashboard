@@ -97,7 +97,7 @@ if files_to_process:
                     for j in range(0, len(texts), batch_size):
                         batch_results = classifier(texts[j:j+batch_size])
                         results.extend(batch_results)
-                        inner_prog.progress(min(1.0, (j+batch_size)/len(texts)), text=f"Analyzing {file.name}...")
+                        inner_prog.progress(min(1.0, (j+batch_size)/len(texts)), text=f"Analyzing {file_name}...")
                     inner_prog.empty()
                     
                     df_clean['Sentiment'] = ['Positive' if r['label'] in ['POSITIVE', 'LABEL_1'] else 'Negative' for r in results]
